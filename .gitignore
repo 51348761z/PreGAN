@@ -138,3 +138,9 @@ dmypy.json
 todo.txt
 *.pdf
 graphernew.py
+
+# personal env
+.idea/
+node_modules/
+package-lock.json
+package.json
