@@ -38,9 +38,8 @@ Install dependencies.
 ```console
 sudo apt -y update
 python3 -m pip --upgrade pip
-python3 -m pip install matplotlib scikit-learn
 python3 -m pip install -r requirements.txt
-python3 -m pip install torch==1.7.1+cpu torchvision==0.8.2+cpu -f https://download.pytorch.org/whl/torch_stable.html
+python3 -m pip install torch==1.13.1+cpu torchvision==0.14.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
 export PATH=$PATH:~/.local/bin
 ```
 Change line 117 in `main.py` to use one of the implemented fault-tolerance techniques: `PreGANRecovery`, `PCFTRecovery`, `DFTMRecovery`, `ECLBRecovery` or `CMODLBRecovery` and run the code using the following command.
