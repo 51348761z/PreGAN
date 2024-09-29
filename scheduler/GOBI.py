@@ -8,6 +8,7 @@ from copy import deepcopy
 class GOBIScheduler(Scheduler):
 	def __init__(self, data_type):
 		super().__init__()
+		# in here data type is energy_latency_16 by default
 		self.model = eval(data_type+"()")
 		self.model, _, _, _ = load_model(data_type, self.model, data_type)
 		self.data_type = data_type
@@ -19,22 +20,35 @@ class GOBIScheduler(Scheduler):
 	def run_GOBI(self):
 		cpu = [host.getCPU()/100 for host in self.env.hostlist]
 		cpu = np.array([cpu]).transpose() # zeros
-		print(self.model.name)
 		if 'latency' in self.model.name: # self.model.name = energy_latency_16
 			cpuC = [(c.getApparentIPS()/self.max_container_ips if c else 0) for c in self.env.containerlist] # enter Container.getApparentIPS
+			print(f'cpuC before transpose = {cpuC}')
 			cpuC = np.array([cpuC]).transpose()
-			print(cpuC)
 			cpu = np.concatenate((cpu, cpuC), axis=1) # axis=1, 按列拼接
 		alloc = []; prev_alloc = {}
 		for c in self.env.containerlist:
 			oneHot = [0] * len(self.env.hostlist)
-			if c: prev_alloc[c.id] = c.getHostID()
+			if c: prev_alloc[c.id] = c.getHostID() # if c, prev_alloc[containerID] = ContainerHostID
+			"""
+				c 存在且 c 的 hostID 不为 1 ，则 oneHot[Host ID of c] = 1
+				else oneHot[randomInt] = 1
+			"""
 			if c and c.getHostID() != -1: oneHot[c.getHostID()] = 1
 			else: oneHot[np.random.randint(0,len(self.env.hostlist))] = 1
 			alloc.append(oneHot)
+		# print(f'cpu: \n{cpu}')
+		# print(f'onhot = \n{oneHot}')
+		# print(f'alloc = \n{alloc}')
+		# print(f'len alloc = {len(alloc)}')
+		"""
+			init.shape = (16, 18)
+			each row represents: (cpu, cpuC, alloc1, alloc2,..., alloc16)
+		"""
 		init = np.concatenate((cpu, alloc), axis=1)
+		print(init, init.shape)
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-		result, iteration, fitness = opt(init, self.model, [], self.data_type)
+		print(init)
+		result, iteration, fitness = opt(init, self.model, [], self.data_type) # opt.py
 		self.result_cache = result[:, -self.hosts:].numpy()
 		decision = []
 		for cid in prev_alloc:

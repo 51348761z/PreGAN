@@ -27,7 +27,7 @@ class Container():
 		return self.ipsmodel.getIPS()
 
 	def getApparentIPS(self):
-		print("enter getApparentIPS")
+		# print("enter getApparentIPS")
 		hostBaseIPS = self.getHost().getBaseIPS()
 		hostIPSCap = self.getHost().ipsCap
 		canUseIPS = (hostIPSCap - hostBaseIPS) / len(self.env.getContainersOfHost(self.hostid))

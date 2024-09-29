@@ -7,14 +7,17 @@ from src.adahessian import Adahessian
 import matplotlib.pyplot as plt
 
 def convertToOneHot(dat, cpu_old, HOSTS):
+    print('enter convertToOneHot')
     alloc = []
     for i in dat:
         oneHot = [0] * HOSTS; alist = i.tolist()[-HOSTS:]
         oneHot[alist.index(max(alist))] = 1; alloc.append(oneHot)
     new_dat_oneHot = torch.cat((cpu_old, torch.FloatTensor(alloc)), dim=1)
+    print(new_dat_oneHot)
     return new_dat_oneHot
 
 def opt(init, model, bounds, data_type):
+    print('enter opt function')
     HOSTS = int(data_type.split('_')[-1])
     optimizer = torch.optim.AdamW([init] , lr=0.8)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
