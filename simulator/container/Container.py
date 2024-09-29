@@ -27,6 +27,7 @@ class Container():
 		return self.ipsmodel.getIPS()
 
 	def getApparentIPS(self):
+		print("enter getApparentIPS")
 		hostBaseIPS = self.getHost().getBaseIPS()
 		hostIPSCap = self.getHost().ipsCap
 		canUseIPS = (hostIPSCap - hostBaseIPS) / len(self.env.getContainersOfHost(self.hostid))
@@ -48,6 +49,7 @@ class Container():
 		return self.hostid
 
 	def getHost(self):
+		# then enter Simulator.getHostByID
 		return self.env.getHostByID(self.hostid)
 
 	def allocate(self, hostID, allocBw):

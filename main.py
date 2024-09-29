@@ -125,7 +125,7 @@ def initalizeEnvironment(environment, logger):
 
 	# Execute first step
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
-	deployed = env.addContainersInit(newcontainerinfos) # Deploy new containers and get container IDs
+	deployed = env.addContainersInit(newcontainerinfos) # Deploy new containers and get container IDs (Simulator)
 	start = time()
 	decision = scheduler.placement(deployed) # Decide placement using container ids
 	schedulingTime = time() - start
@@ -195,38 +195,7 @@ def saveStats(stats, datacenter, workload, env, end=True):
 	    pickle.dump(stats, handle)
 
 if __name__ == '__main__':
-	env, mode = opts.env, int(opts.mode)
-
-	if env != '':
-		# Convert all agent files to unix format
-		unixify(['framework/agent/', 'framework/agent/scripts/'])
-
-		# Start InfluxDB service
-		print(color.HEADER+'InfluxDB service runs as a separate front-end window. Please minimize this window.'+color.ENDC)
-		if 'Windows' in platform.system():
-			os.startfile('C:/Program Files/InfluxDB/influxdb-1.8.3-1/influxd.exe')
-
-		configFile = 'framework/config/' + opts.env + '_config.json'
-	    
-		logger.basicConfig(filename=logFile, level=logger.DEBUG,
-	                        format='%(asctime)s - %(levelname)s - %(message)s')
-		logger.debug("Creating enviornment in :{}".format(env))
-		cfg = {}
-		with open(configFile, "r") as f:
-			cfg = json.load(f)
-		DB_HOST = cfg['database']['ip']
-		DB_PORT = cfg['database']['port']
-		DB_NAME = 'COSCO'
-
-		if env == 'Vagrant':
-			print("Setting up VirtualBox environment using Vagrant")
-			HOSTS_IP = setupVagrantEnvironment(configFile, mode)
-			print(HOSTS_IP)
-		elif env == 'VLAN':
-			print("Setting up VLAN environment using Ansible")
-			HOSTS_IP = setupVLANEnvironment(configFile, mode)
-			print(HOSTS_IP)
-		# exit()
+	env, mode = opts.env, int(opts.mode) # env = '', mode = 0 by default
 
 	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(env, logger)
 
@@ -235,13 +204,6 @@ if __name__ == '__main__':
 		stepSimulation(workload, scheduler, recovery, env, stats)
 		if env != '' and step % 10 == 0: saveStats(stats, datacenter, workload, env, end = False)
 
-	if opts.env != '':
-		# Destroy environment if required
-		eval('destroy'+opts.env+'Environment(configFile, mode)')
-
-		# Quit InfluxDB
-		if 'Windows' in platform.system():
-			os.system('taskkill /f /im influxd.exe')
 
 	saveStats(stats, datacenter, workload, env)
 

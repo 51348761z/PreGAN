@@ -34,6 +34,11 @@ class BWGD2(Workload):
 		self.meanSLA, self.sigmaSLA = 20, 3
 		self.possible_indices = []
 		for i in range(1, 500):
+			"""
+				遍历文件名从 1.csv 到 499.csv 的 CSV 文件，读取每个文件中的 'CPU usage [MHZ]' 列，
+				检查第 11 个元素的值是否在乘以 ips_multiplier 后介于 500 和 3000 之间。如果条件满足，
+				代码将文件的编号 i 添加到 self.possible_indices 列表中。
+			"""
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
 			if (ips_multiplier*df['CPU usage [MHZ]']).to_list()[10] < 3000 and (ips_multiplier*df['CPU usage [MHZ]']).to_list()[10] > 500:
 				self.possible_indices.append(i)			

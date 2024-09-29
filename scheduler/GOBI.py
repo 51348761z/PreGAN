@@ -18,11 +18,13 @@ class GOBIScheduler(Scheduler):
 
 	def run_GOBI(self):
 		cpu = [host.getCPU()/100 for host in self.env.hostlist]
-		cpu = np.array([cpu]).transpose()
-		if 'latency' in self.model.name:
-			cpuC = [(c.getApparentIPS()/self.max_container_ips if c else 0) for c in self.env.containerlist]
+		cpu = np.array([cpu]).transpose() # zeros
+		print(self.model.name)
+		if 'latency' in self.model.name: # self.model.name = energy_latency_16
+			cpuC = [(c.getApparentIPS()/self.max_container_ips if c else 0) for c in self.env.containerlist] # enter Container.getApparentIPS
 			cpuC = np.array([cpuC]).transpose()
-			cpu = np.concatenate((cpu, cpuC), axis=1)
+			print(cpuC)
+			cpu = np.concatenate((cpu, cpuC), axis=1) # axis=1, 按列拼接
 		alloc = []; prev_alloc = {}
 		for c in self.env.containerlist:
 			oneHot = [0] * len(self.env.hostlist)
@@ -45,6 +47,10 @@ class GOBIScheduler(Scheduler):
 		return []
 
 	def placement(self, containerIDs):
+		"""
+			np.all(np.array)   对矩阵所有元素做与操作，所有为True则返回True
+			np.any(np.array)   对矩阵所有元素做或运算，存在True则返回True
+		"""
 		first_alloc = np.all([not (c and c.getHostID() != -1) for c in self.env.containerlist])
 		decision = self.run_GOBI()
 		return decision
