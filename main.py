@@ -90,43 +90,17 @@ if len(sys.argv) > 1:
 	with open(logFile, 'w'): os.utime(logFile, None)
 
 def initalizeEnvironment(environment, logger):
-	if environment != '':
-		# Initialize the db
-		db = Database(DB_NAME, DB_HOST, DB_PORT)
-
-	# Initialize simple fog datacenter
-	''' Can be SimpleFog, BitbrainFog, AzureFog // Datacenter '''
-	if environment != '':
-		datacenter = Datacenter(HOSTS_IP, environment, 'Virtual')
-	else:
-		datacenter = RPiEdge(HOSTS)
-
-	# Initialize workload
-	''' Can be SWSD, BWGD, BWGD2 // DFW '''
-	if environment != '':
-		workload = DFW(NEW_CONTAINERS, 1.5, db)
-	else: 
-		workload = BWGD2(NEW_CONTAINERS, 1.5)
-	
-	# Initialize scheduler
-	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
+	datacenter = RPiEdge(HOSTS)
+	workload = BWGD2(NEW_CONTAINERS, 1.5)
 	scheduler = GOBIScheduler('energy_latency_'+str(HOSTS))
-	
-	# Initialize recovery
-	''' Can be PreGANRecovery, PCFTRecovery, DFTMRecovery, ECLBRecovery, CMODLBRecovery '''
 	recovery = PreGANRecovery(HOSTS, environment, training = False)
-
 	# Initialize Environment
 	hostlist = datacenter.generateHosts()
-	if environment != '':
-		env = Framework(scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist, db, environment, logger)
-	else:
-		env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
+	env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 
 	# Execute first step
 	newcontainerinfos = workload.generateNewContainers(env.interval) # 返回未部署的容器 ID list
 	deployed = env.addContainersInit(newcontainerinfos) # 部署容器并获取容器ID list (Simulator)
-	# print(f'deployed = {deployed}')
 	start = time()
 	decision = scheduler.placement(deployed) # 返回一个决策列表 [(容器ID，新的主机ID), ...], 表示容器x迁移到新主机y，此时还未真正迁移
 	schedulingTime = time() - start
@@ -139,8 +113,6 @@ def initalizeEnvironment(environment, logger):
 	# print("Schedule:", env.getActiveContainerList()) # 返回 活动容器所在的主机ID, 不活动的容器返回 -1
 	print("Active containers' host IDs:", env.getActiveContainerList()) # 返回 活动容器所在的主机ID, 不活动的容器返回 -1
 	printDecisionAndMigrations(decision, migrations)
-	# print(f'decision = {decision}')
-	# print(f'migrations = {migrations}')
 
 	# Initialize stats
 	stats = Stats(env, workload, datacenter, scheduler)
@@ -159,7 +131,7 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
 	print("Deployed:", len(env.getCreationIDs(migrations, deployed)), "of", len(newcontainerinfos), [i[0] for i in newcontainerinfos])
-	print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers())
+	print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers(), [i[0] for i in destroyed])
 	print("Containers in host:", env.getContainersInHosts())
 	print("Num active containers:", env.getNumActiveContainers())
 	print("Host allocation:", [(c.getHostID() if c else -1)for c in env.containerlist])
@@ -201,14 +173,11 @@ def saveStats(stats, datacenter, workload, env, end=True):
 
 if __name__ == '__main__':
 	env, mode = opts.env, int(opts.mode) # env = '', mode = 0 by default
-
 	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(env, logger)
-
 	for step in range(NUM_SIM_STEPS):
 		print(color.BOLD+("Simulation" if opts.env == '' else "Execution")+" Interval:", step, color.ENDC)
 		stepSimulation(workload, scheduler, recovery, env, stats)
 		if env != '' and step % 10 == 0: saveStats(stats, datacenter, workload, env, end = False)
-
 
 	saveStats(stats, datacenter, workload, env)
 

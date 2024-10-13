@@ -53,16 +53,7 @@ class FPE_16(nn.Module):
 	"""
 	def encode(self, t, s):
 		h = torch.randn(1, self.n_window, dtype=torch.double) # h shape (1, 3)
-		# print('h = ', h)
-		# print(f'h.shape is {h.shape}')
-		# print('t: ', t)
-		# print(f't.shape is {t.shape}')
-		# transT = torch.t(t)
-		# print('transT: ', transT)
-		# print(f'transT.shape is {transT.shape}')
 		gru_t, _ = self.gru(torch.t(t), h) # 取T转秩 = (48, 3)
-		# print(f'gru_t:\n{gru_t}\ngur_t.shape = {gru_t.shape}')
-		# print(f'hn = {hn}\nhn.shape = {hn.shape}')
 		gru_t = torch.t(gru_t) # gru_t shape: (3, 48)
 		graph = torch.cat((t, torch.zeros(self.n_window, 1)), dim=1) # graph shape: (3, 49)
 		gat_t = self.gat(torch.t(graph)) # gat_t shape: (49, 3)
