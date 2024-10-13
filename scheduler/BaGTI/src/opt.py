@@ -7,17 +7,18 @@ from src.adahessian import Adahessian
 import matplotlib.pyplot as plt
 
 def convertToOneHot(dat, cpu_old, HOSTS):
-    print('enter convertToOneHot')
+    # print('enter convertToOneHot')
     alloc = []
     for i in dat:
         oneHot = [0] * HOSTS; alist = i.tolist()[-HOSTS:]
+        # 找到 alist 中最大值的索引，将对应的 oneHot 位置设置为 1，实现独热编码。
         oneHot[alist.index(max(alist))] = 1; alloc.append(oneHot)
     new_dat_oneHot = torch.cat((cpu_old, torch.FloatTensor(alloc)), dim=1)
-    print(new_dat_oneHot)
+    # print(new_dat_oneHot)
     return new_dat_oneHot
 
 def opt(init, model, bounds, data_type):
-    print('enter opt function')
+    # print('enter opt function')
     HOSTS = int(data_type.split('_')[-1])
     optimizer = torch.optim.AdamW([init] , lr=0.8)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
@@ -33,6 +34,8 @@ def opt(init, model, bounds, data_type):
     #     zs.append(z.item())
     # plt.plot(zs); plt.show(); plt.clf()
     init.requires_grad = False 
+    # init.data = [cpu, cpuC, alloc1, alloc2, ......, alloc16] (16, 18)
+    # print(init.data)
     return init.data, iteration, model(init)
 
 def so_opt(init, model, bounds, data_type):

@@ -44,8 +44,13 @@ class BWGD2(Workload):
 				self.possible_indices.append(i)			
 
 	def generateNewContainers(self, interval):
+		# 输入参数 interval，表示某个时间间隔或时间段
 		workloadlist = []
 		for i in range(max(1,int(gauss(self.mean, self.sigma)))):
+			'''
+				CreationID 是容器的创建 ID，使用 self.creation_id 作为当前容器的唯一标识符。
+				index 从 self.possible_indices 列表中随机选择一个索引值，用于决定读取哪个 CSV 文件。
+			'''
 			CreationID = self.creation_id
 			index = self.possible_indices[randint(0,len(self.possible_indices)-1)]
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')

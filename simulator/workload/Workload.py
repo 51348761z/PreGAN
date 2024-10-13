@@ -14,6 +14,7 @@ class Workload():
 		return undeployed
 
 	def updateDeployedContainers(self, creationIDs):
+		# print('enter updateDeployedContainers')
 		for cid in creationIDs:
 			assert not self.deployedContainers[cid]
 			self.deployedContainers[cid] = True

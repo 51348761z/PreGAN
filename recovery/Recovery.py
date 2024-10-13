@@ -8,6 +8,7 @@ class Recovery():
         self.latent = None
 
     def setEnvironment(self, env):
+        # print('enter setEnvironment')
         self.env = env
 
     def run_model(self, time_series, original_decision):

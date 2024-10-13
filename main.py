@@ -124,17 +124,23 @@ def initalizeEnvironment(environment, logger):
 		env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 
 	# Execute first step
-	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
-	deployed = env.addContainersInit(newcontainerinfos) # Deploy new containers and get container IDs (Simulator)
+	newcontainerinfos = workload.generateNewContainers(env.interval) # 返回未部署的容器 ID list
+	deployed = env.addContainersInit(newcontainerinfos) # 部署容器并获取容器ID list (Simulator)
+	# print(f'deployed = {deployed}')
 	start = time()
-	decision = scheduler.placement(deployed) # Decide placement using container ids
+	decision = scheduler.placement(deployed) # 返回一个决策列表 [(容器ID，新的主机ID), ...], 表示容器x迁移到新主机y，此时还未真正迁移
 	schedulingTime = time() - start
-	migrations = env.allocateInit(decision) # Schedule containers
+
+	migrations = env.allocateInit(decision) # 返回 migrations 列表 [(cid, hid),...]，包含所有成功迁移的容器 ID 及其目标主机 ID。完成真正的迁移
+	# 根据给定的迁移信息和容器 ID 列表，返回与这些容器对应的 creationID 列表，并在 workload 中更新已部署容器的状态
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload allocated using creation IDs
-	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
-	print("Containers in host:", env.getContainersInHosts())
-	print("Schedule:", env.getActiveContainerList())
+	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed)) # 返回与容器对应的 creationID 列表
+	print("Containers in host:", env.getContainersInHosts()) # 返回每个主机中的容器数量
+	# print("Schedule:", env.getActiveContainerList()) # 返回 活动容器所在的主机ID, 不活动的容器返回 -1
+	print("Active containers' host IDs:", env.getActiveContainerList()) # 返回 活动容器所在的主机ID, 不活动的容器返回 -1
 	printDecisionAndMigrations(decision, migrations)
+	# print(f'decision = {decision}')
+	# print(f'migrations = {migrations}')
 
 	# Initialize stats
 	stats = Stats(env, workload, datacenter, scheduler)
@@ -142,14 +148,13 @@ def initalizeEnvironment(environment, logger):
 	return datacenter, workload, scheduler, recovery, env, stats
 
 def stepSimulation(workload, scheduler, recovery, env, stats):
-	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
-	if opts.env != '': print(newcontainerinfos)
-	deployed, destroyed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
+	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info (IDs)
+	deployed, destroyed = env.addContainers(newcontainerinfos) # 部署新容器，并且销毁已经完成计算任务的旧容器，return 2 lists
 	start = time()
-	selected = scheduler.selection() # Select container IDs for migration
-	decision = scheduler.filter_placement(scheduler.placement(selected+deployed)) # Decide placement for selected container ids
+	selected = scheduler.selection() # Select container IDs for migration (scheduler.selection() returns a NULL list)
+	decision = scheduler.filter_placement(scheduler.placement(selected+deployed)) # 只保留需要迁移的容器决策（迁移到不同主机上）
 	schedulingTime = time() - start
-	recovered_decision = recovery.run_model(stats.time_series, decision)
+	recovered_decision = recovery.run_model(stats.time_series, decision) # 根据时间序列和决策输入，生成恢复决策
 	migrations = env.simulationStep(recovered_decision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))

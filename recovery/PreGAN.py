@@ -1,6 +1,8 @@
+from os import times
 import sys
 sys.path.append('recovery/PreGANSrc/')
 
+from dgl._deprecate.nodeflow import scheduler
 import numpy as np
 from copy import deepcopy
 from .Recovery import *
@@ -28,6 +30,7 @@ class PreGANRecovery(Recovery):
         # Freeze encoder
         freeze(self.model)
         # Load generator and discriminator
+        # gopt = genOptimizer, dopt = discOptimizer, epoch = genEpoch, accList = genAccList
         self.gen, self.disc, self.gopt, self.dopt, self.epoch, self.accuracy_list = \
             load_gan(model_folder, f'{self.env_name}_{self.gen_name}.ckpt', f'{self.env_name}_{self.disc_name}.ckpt', self.gen_name, self.disc_name) 
         self.gan_plotter = GAN_Plotter(self.env_name, self.gen_name, self.disc_name, self.training)
@@ -70,9 +73,14 @@ class PreGANRecovery(Recovery):
         save_gan(model_folder, f'{self.env_name}_{self.gen_name}.ckpt', f'{self.env_name}_{self.disc_name}.ckpt', \
                 self.gen, self.disc, self.gopt, self.dopt, self.epoch, self.accuracy_list)
 
+    """
+        recover_decision 函数的作用是根据嵌入（embedding）和调度数据（schedule_data）来生成新的迁移决策，
+        并通过对比生成器和判别器的结果来确定是否接受新生成的决策。
+    """
     def recover_decision(self, embedding, schedule_data, original_decision):
-        new_schedule_data = self.gen(embedding, schedule_data)
-        probs = self.disc(schedule_data, new_schedule_data)
+        new_schedule_data = self.gen(embedding, schedule_data) # new_schedule_data shape: (16, 16)
+        probs = self.disc(schedule_data, new_schedule_data) # probs shape: torch.Size([2])
+        # probs[1] = new decision score, probs[0] = old decision score
         self.gan_plotter.new_better(probs[1] >= probs[0])
         if probs[0] > probs[1]: # original better
             return original_decision
@@ -84,6 +92,9 @@ class PreGANRecovery(Recovery):
                 host_alloc[c.getHostID()].append(c.id) 
                 container_alloc[c.id] = c.getHostID()
         decision_dict = dict(original_decision); hosts_from = [0] * self.hosts
+        # print(f'host_alloc = {host_alloc}')
+        # print(f'np.concatenate(host_alloc) = {np.concatenate(host_alloc)}')
+        # print(f'np.concatenate(host_alloc).shape = {np.concatenate(host_alloc).shape}')
         for cid in np.concatenate(host_alloc):
             cid = int(cid)
             one_hot = schedule_data[cid].tolist()
@@ -96,32 +107,39 @@ class PreGANRecovery(Recovery):
 
     def run_encoder(self, schedule_data):
         # Get latest data from Stat
-        time_data = self.env.stats.time_series
-        time_data = normalize_test_time_data(time_data, self.train_time_data)
+        time_data = self.env.stats.time_series # time_data.shape: (2, 48)
+        # print(f'time_data = {time_data}\n{time_data.shape}')
+        # print(f'train_time_data = {self.train_time_data}\n{self.train_time_data.shape}')
+        time_data = normalize_test_time_data(time_data, self.train_time_data) # self.train_time_data.shape = (202, 48)
         if time_data.shape[0] >= self.model.n_window: time_data = time_data[-self.model.n_window:]
-        time_data = convert_to_windows(time_data, self.model)[-1]
+        time_data = convert_to_windows(time_data, self.model)[-1] # time_data shape = (3, 48)
         return self.model(time_data, schedule_data)
 
     def run_model(self, time_series, original_decision):
         # Run encoder
-        schedule_data = torch.tensor(self.env.scheduler.result_cache).double()
+        schedule_data = torch.tensor(self.env.scheduler.result_cache).double() # schedule_data shape: (16, 16)
         anomaly, prototype = self.run_encoder(schedule_data)
         # If no anomaly predicted, return original decision 
         for a in anomaly:
+            # torch.argmax(): Returns the indices of the maximum value of all elements in the input tensor.
             prediction = torch.argmax(a).item() 
+            # D[1] >= D[0], 则更新 gan_plotter 的异常检测状态为 1，并立即退出循环
             if prediction == 1: 
                 self.gan_plotter.update_anomaly_detected(1)
                 break
         else:
+            # 如果没有检测到异常，则更新异常检测状态为 0，并直接返回原始决策 original_decision
             self.gan_plotter.update_anomaly_detected(0)
             return original_decision
         # Form prototype vectors for diagnosed hosts
+        # 遍历 prototype list, 如果有异常的主机，则取 prototype[i] 作为 embedding，否则取0
         embedding = [torch.zeros_like(p) if torch.argmax(anomaly[i]).item() == 0 else p for i, p in enumerate(prototype)]
         self.gan_plotter.update_class_detected(get_classes(embedding, self.model))
-        embedding = torch.stack(embedding)
+        embedding = torch.stack(embedding) # transfrom a python list to torch.tensor
         # Pass through GAN
         if self.training:
             self.train_gan(embedding, schedule_data)
             # return original_decision
+        # embedding shape: (16, 2)
         return self.recover_decision(embedding, schedule_data, original_decision)
 

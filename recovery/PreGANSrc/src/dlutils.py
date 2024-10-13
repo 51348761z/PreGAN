@@ -339,12 +339,15 @@ class GATLayer(nn.Module):
 class MultiHeadGATLayer(nn.Module):
     def __init__(self, g, in_dim, out_dim, num_heads, merge='cat'):
         super(MultiHeadGATLayer, self).__init__()
+        # self.heads = nn.ModuleList()：用一个 ModuleList 来存储多个单头的 GATLayer。
         self.heads = nn.ModuleList()
         for i in range(num_heads):
             self.heads.append(GATLayer(g, in_dim, out_dim))
+        # merge 是合并方式，'cat' 表示在特征维度上进行拼接，'mean' 表示对多个头的输出取平均。
         self.merge = merge
 
     def forward(self, h):
+        # 对输入 h（图中节点的特征）使用每个注意力头进行处理，生成多个输出 head_outs。
         head_outs = [attn_head(h) for attn_head in self.heads]
         if self.merge == 'cat':
             # concat on the output feature dimension (dim=1)
@@ -353,11 +356,19 @@ class MultiHeadGATLayer(nn.Module):
             # merge using average
             return torch.mean(torch.stack(head_outs))
         
+"""
+    这个类是一个包含多头图注意力层的图注意力网络（GAT）。
+    在初始化时，它会创建一个 MultiHeadGATLayer，传入图 g，输入和输出维度 in_dim、out_dim，以及注意力头的数量 num_heads。
+"""
 class GAT(nn.Module):
     def __init__(self, g, in_dim, out_dim, num_heads = 1):
         super(GAT, self).__init__()
         self.layer1 = MultiHeadGATLayer(g, in_dim, out_dim, num_heads)
+    """
+        在 forward 方法中，将输入的节点特征 h 经过多头图注意力层（self.layer1）处理后，
+        再通过一个 ELU（Exponential Linear Unit） 激活函数来增加非线性。
 
+    """
     def forward(self, h):
         h = self.layer1(h)
         h = F.elu(h)

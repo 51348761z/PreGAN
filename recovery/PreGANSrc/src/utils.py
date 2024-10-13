@@ -1,9 +1,14 @@
+from math import e
 import os
 import torch
 import numpy as np
 from .constants import *
 from .models import *
 
+"""
+	convert_to_windows 函数的作用是将输入数据 data 转换为固定大小的窗口数据，以便输入到模型中进行处理。
+	这种方法常用于时间序列数据处理中，通过提取滑动窗口的方式，生成一系列连续的时间片段作为模型的输入。
+"""
 def convert_to_windows(data, model):
 	data = torch.tensor(data).double()
 	windows = []; w_size = model.n_window
@@ -11,7 +16,8 @@ def convert_to_windows(data, model):
 		if i >= w_size: w = data[i-w_size:i]
 		else: w = torch.cat([data[0].repeat(w_size-i, 1), data[0:i]])
 		windows.append(w)
-	return torch.stack(windows)
+	# print(f'torch.stack(windows).shape = {torch.stack(windows).shape}')
+	return torch.stack(windows) # shape is (2, 3, 48) ~ (batchSize, nWindow, lenTimeSeries)
 
 def form_test_dataset(data):
 	anomaly_per_dim = data > np.percentile(data, PERCENTILES, axis=0)
@@ -57,9 +63,16 @@ def save_model(folder, fname, model, optimizer, epoch, accuracy_list):
         'optimizer_state_dict': optimizer.state_dict(),
         'accuracy_list': accuracy_list}, path)
 
+"""
+	load_model 函数，用于加载或创建一个机器学习模型，主要针对 PyTorch 框架。
+	该函数负责从指定路径加载预训练模型的状态，如果没有找到预训练模型文件，
+	则初始化一个新的模型并返回相关的信息。
+"""
 def load_model(folder, fname, modelname):
+	print("enter load_model")
 	import recovery.PreGANSrc.src.models
 	path = os.path.join(folder, fname)
+	# 从 recovery.PreGANSrc.src.models 模块中动态获取名为 modelname 的类。
 	model_class = getattr(recovery.PreGANSrc.src.models, modelname)
 	model = model_class().double()
 	optimizer = torch.optim.AdamW(model.parameters() , lr=model.lr, weight_decay=1e-5)
@@ -91,7 +104,11 @@ def save_gan(folder, gfname, dfname, gmodel, dmodel, gopt, dopt, epoch, accuracy
 def normalize_time_data(time_data):
 	return time_data / (np.max(time_data, axis = 0) + 1e-8) 
 
+"""
+	将测试数据 time_data 通过训练数据 train_time_data 的最大值进行归一化
+"""
 def normalize_test_time_data(time_data, train_time_data):
+	# np.max(train_time_data, axis=0) 按列获取训练数据的最大值
 	return (time_data / (np.max(train_time_data, axis = 0) + 1e-8))
 
 def run_simulation(stats, schedule_data):

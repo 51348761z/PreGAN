@@ -5,6 +5,10 @@ import re
 from subprocess import call
 from .ColorUtils import *
 
+"""
+	printDecisionAndMigrations 方法的作用是打印出容器调度决策 (decision) 和迁移操作 (migrations)，
+	并且通过颜色标识哪些决策没有导致容器迁移。
+"""
 def printDecisionAndMigrations(decision, migrations):
 	print('Decision: [', end='')
 	for i, d in enumerate(decision):

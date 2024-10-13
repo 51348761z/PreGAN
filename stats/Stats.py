@@ -43,9 +43,15 @@ class Stats():
 		hostinfo['diskavailable'] = [host.getDiskAvailable() for host in self.env.hostlist]
 		cpulist, ramlist, disklist = hostinfo['cpu'], [i[0] for i in hostinfo['ram']], [i[0] for i in hostinfo['disk']]
 		datapoint = np.concatenate([[cpulist[i], ramlist[i], disklist[i]] for i in range(len(cpulist))]).reshape(1, -1)
+		# print(f'datapoint = {datapoint} \n {datapoint.shape}')
+		# print(f'self.time_series = {self.time_series}')
 		self.time_series = np.append(self.time_series, datapoint, axis=0)
+		# print(f'self.time_series = {self.time_series}')
 		datapoint = np.array([self.env.scheduler.result_cache])
+		# print(f'datapoint = {datapoint} \n {datapoint.shape}')
 		self.schedule_series = np.append(self.schedule_series, datapoint, axis=0)
+		# print(f'self.schedule_series = {self.schedule_series} \n {self.schedule_series.shape}')
+		# print(f'hostinfor = \n{hostinfo}')
 		self.hostinfo.append(hostinfo)
 
 	def saveWorkloadInfo(self, deployed, migrations):

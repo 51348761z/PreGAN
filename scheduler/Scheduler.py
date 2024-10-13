@@ -18,14 +18,23 @@ class Scheduler():
     def placement(self, containerlist):
         pass
 
+    """
+        filter_placement 方法的作用是过滤调度决策中已经在目标主机的容器，只保留需要迁移的容器决策。
+        它通过检查每个容器的当前主机 ID 和决策中的主机 ID 是否一致，确保只有那些需要迁移的容器被保留。
+    """
     def filter_placement(self, decision):
+        # print('enter filter_placement')
         filtered_decision = []
         for cid, hid in decision:
             if self.env.getContainerByID(cid).getHostID() != hid:
                 filtered_decision.append((cid, hid))
         return filtered_decision
 
+    """
+        确认决策中的容器是否属于 hostID 指定的主机，如果 hostID 一致，则将容器加入列表
+    """
     def getMigrationFromHost(self, hostID, decision):
+        # print('enter getMigrationFromHost')
         containerIDs = []
         for (cid, _) in decision:
             hid = self.env.getContainerByID(cid).getHostID()
@@ -34,8 +43,10 @@ class Scheduler():
         return containerIDs
 
     def getMigrationToHost(self, hostID, decision):
+        # print('enter getMigrationToHost')
         containerIDs = []
         for (cid, hid) in decision:
+            # 检查决策中的 hostID 是否与当前 hostID 一致
             if hid == hostID:
                 containerIDs.append(cid)
         return containerIDs
