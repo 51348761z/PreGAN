@@ -136,6 +136,7 @@ class Disc_16(nn.Module):
 	def forward(self, o, n):
 		#(torch.cat((o.view(-1), n.view(-1)))) shape: (16*16 + 16*16) 
 		probs = self.probs(torch.cat((o.view(-1), n.view(-1))))
+		# probs[1] >= probs[0], 取新决策 论文P4-(9)
 		return probs
 
 

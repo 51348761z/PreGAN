@@ -69,7 +69,7 @@ def save_model(folder, fname, model, optimizer, epoch, accuracy_list):
 	则初始化一个新的模型并返回相关的信息。
 """
 def load_model(folder, fname, modelname):
-	print("enter load_model")
+	# print("enter load_model")
 	import recovery.PreGANSrc.src.models
 	path = os.path.join(folder, fname)
 	# 从 recovery.PreGANSrc.src.models 模块中动态获取名为 modelname 的类。

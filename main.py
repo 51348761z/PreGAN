@@ -131,10 +131,11 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
 	print("Deployed:", len(env.getCreationIDs(migrations, deployed)), "of", len(newcontainerinfos), [i[0] for i in newcontainerinfos])
-	print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers(), [i[0] for i in destroyed])
+	print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers(), [c.id for c in destroyed])
 	print("Containers in host:", env.getContainersInHosts())
 	print("Num active containers:", env.getNumActiveContainers())
-	print("Host allocation:", [(c.getHostID() if c else -1)for c in env.containerlist])
+	# print("Host allocation:", [(c.getHostID() if c else -1)for c in env.containerlist])
+	print("Allocated containers' hostID:", [(c.getHostID() if c else -1)for c in env.containerlist])
 	printDecisionAndMigrations(decision, migrations)
 
 	stats.saveStats(deployed, migrations, destroyed, selected, decision, schedulingTime)

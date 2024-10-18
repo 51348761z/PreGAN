@@ -92,9 +92,6 @@ class PreGANRecovery(Recovery):
                 host_alloc[c.getHostID()].append(c.id) 
                 container_alloc[c.id] = c.getHostID()
         decision_dict = dict(original_decision); hosts_from = [0] * self.hosts
-        # print(f'host_alloc = {host_alloc}')
-        # print(f'np.concatenate(host_alloc) = {np.concatenate(host_alloc)}')
-        # print(f'np.concatenate(host_alloc).shape = {np.concatenate(host_alloc).shape}')
         for cid in np.concatenate(host_alloc):
             cid = int(cid)
             one_hot = schedule_data[cid].tolist()
@@ -108,8 +105,6 @@ class PreGANRecovery(Recovery):
     def run_encoder(self, schedule_data):
         # Get latest data from Stat
         time_data = self.env.stats.time_series # time_data.shape: (2, 48)
-        # print(f'time_data = {time_data}\n{time_data.shape}')
-        # print(f'train_time_data = {self.train_time_data}\n{self.train_time_data.shape}')
         time_data = normalize_test_time_data(time_data, self.train_time_data) # self.train_time_data.shape = (202, 48)
         if time_data.shape[0] >= self.model.n_window: time_data = time_data[-self.model.n_window:]
         time_data = convert_to_windows(time_data, self.model)[-1] # time_data shape = (3, 48)
@@ -132,7 +127,7 @@ class PreGANRecovery(Recovery):
             self.gan_plotter.update_anomaly_detected(0)
             return original_decision
         # Form prototype vectors for diagnosed hosts
-        # 遍历 prototype list, 如果有异常的主机，则取 prototype[i] 作为 embedding，否则取0
+        # 遍历 prototype list, 如果有异常的主机，则取 prototype[i] 作为 embedding，否则取0。论文P4-(6)
         embedding = [torch.zeros_like(p) if torch.argmax(anomaly[i]).item() == 0 else p for i, p in enumerate(prototype)]
         self.gan_plotter.update_class_detected(get_classes(embedding, self.model))
         embedding = torch.stack(embedding) # transfrom a python list to torch.tensor

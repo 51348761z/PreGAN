@@ -298,15 +298,15 @@ class Stats():
 		df.to_csv(dirname + '/' + title + '.csv' , header=False, index=False)
 
 	def generateGraphs(self, dirname):
-		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'cpu')
-		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'numcontainers')
-		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'power')
-		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'baseips', 'apparentips')
-		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ipscap', 'apparentips')
-		# self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'ips', 'apparentips')
-		# self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'hostalloc')
-		# self.generateMetricsWithInterval(dirname)
-		# self.generateWorkloadWithInterval(dirname)
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'cpu')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'numcontainers')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'power')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'baseips', 'apparentips')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ipscap', 'apparentips')
+		self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'ips', 'apparentips')
+		self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'hostalloc')
+		self.generateMetricsWithInterval(dirname)
+		self.generateWorkloadWithInterval(dirname)
 		self.generateTimeSeriesDataset(dirname)
 
 	def generateDatasets(self, dirname):
